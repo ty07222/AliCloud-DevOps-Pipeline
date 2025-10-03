@@ -1,0 +1,19 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+plan.json
+tfplan
+
+# Ansible
+ansible/ansible_facts/
+ansible/kubeadm-join-commands
+ansible/{changed:*
+
+# IDE / 编辑器
+.vscode/
+.idea/
+*.swp
+*~
+/
