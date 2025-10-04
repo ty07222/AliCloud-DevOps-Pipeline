@@ -1,5 +1,5 @@
 # 构建阶段
-FROM maven:3.8.6-openjdk-17 AS build
+FROM maven:3.9.10-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
