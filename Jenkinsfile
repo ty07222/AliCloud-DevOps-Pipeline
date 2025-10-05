@@ -45,16 +45,19 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    def tag = "build-${BUILD_NUMBER}"  // 👈 重新定义 tag
-                    def FULL_IMAGE = "${IMAGE_NAME}:${tag}"  // 👈 正确构造
+                    def tag = "build-${BUILD_NUMBER}"
+                    def FULL_IMAGE = "${IMAGE_NAME}:${tag}"
                     withCredentials([file(
                         credentialsId: 'kubeconfig-prod',
                         variable: 'KUBECONFIG'
                     )]) {
                         sh """
-                            kubectl cluster-info
-                            kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-                            kubectl set image deployment/${APP_NAME} ${APP_NAME}=${FULL_IMAGE} -n ${NAMESPACE}
+                            echo "🚀 开始部署到 Kubernetes..."
+                            # 使用 --insecure-skip-tls-verify 绕过证书验证
+                            kubectl --insecure-skip-tls-verify cluster-info
+                            kubectl --insecure-skip-tls-verify create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl --insecure-skip-tls-verify apply -f -
+                            kubectl --insecure-skip-tls-verify set image deployment/${APP_NAME} ${APP_NAME}=${FULL_IMAGE} -n ${NAMESPACE}
+                            echo "✅ 应用已更新为镜像: ${FULL_IMAGE}"
                         """
                     }
                 }
