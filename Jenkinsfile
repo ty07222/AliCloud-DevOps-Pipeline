@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([file(
-                        credentialsId: 'k8s-config',             
+                        credentialsId: 'kubeconfig-prod',             
                         variable: 'KUBECONFIG'
                     )]) {
                         sh """
