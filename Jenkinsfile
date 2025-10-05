@@ -39,6 +39,22 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withCredentials([file(
+                        credentialsId: 'k8s-config',             
+                        variable: 'KUBECONFIG'
+                    )]) {
+                        sh """
+                            kubectl cluster-info
+                            kubectl create namespace petclinic --dry-run=client -o yaml | kubectl apply -f -
+                            kubectl set image deployment/${APP_NAME} ${APP_NAME}=${FULL_IMAGE} -n petclinic
+                        """
+                    }
+                }
+            }
+        }
     }
 
     post {
