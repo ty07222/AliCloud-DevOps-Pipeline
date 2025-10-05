@@ -5,8 +5,8 @@ pipeline {
         HARBOR_HOST = '47.85.199.199:80'
         HARBOR_PROJECT = 'library'
         IMAGE_NAME = "${HARBOR_HOST}/${HARBOR_PROJECT}/spring-petclinic"
-        APP_NAME         = 'spring-petclinic'
-        FULL_IMAGE       = "${IMAGE_NAME}:${IMAGE_TAG}"
+        APP_NAME = 'spring-petclinic'
+        NAMESPACE = 'petclinic'
     }
 
     stages {
@@ -25,7 +25,7 @@ pipeline {
                     script {
                         def tag = "build-${BUILD_NUMBER}"
                         withCredentials([usernamePassword(
-                            credentialsId: 'harbor-creds',  
+                            credentialsId: 'harbor-creds',
                             usernameVariable: 'HARBOR_USER',
                             passwordVariable: 'HARBOR_PASS'
                         )]) {
@@ -41,17 +41,20 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy to Kubernetes') {
             steps {
                 script {
+                    def tag = "build-${BUILD_NUMBER}"  // 👈 重新定义 tag
+                    def FULL_IMAGE = "${IMAGE_NAME}:${tag}"  // 👈 正确构造
                     withCredentials([file(
-                        credentialsId: 'kubeconfig-prod',             
+                        credentialsId: 'kubeconfig-prod',
                         variable: 'KUBECONFIG'
                     )]) {
                         sh """
                             kubectl cluster-info
-                            kubectl create namespace petclinic --dry-run=client -o yaml | kubectl apply -f -
-                            kubectl set image deployment/${APP_NAME} ${APP_NAME}=${FULL_IMAGE} -n petclinic
+                            kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                            kubectl set image deployment/${APP_NAME} ${APP_NAME}=${FULL_IMAGE} -n ${NAMESPACE}
                         """
                     }
                 }
