@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        HARBOR_HOST = '47.85.199.199:80'
+        HARBOR_HOST = '8.221.96.197:80'
         HARBOR_PROJECT = 'library'
         IMAGE_NAME = "${HARBOR_HOST}/${HARBOR_PROJECT}/spring-petclinic"
         APP_NAME = 'spring-petclinic'
