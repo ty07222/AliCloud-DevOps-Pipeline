@@ -49,11 +49,11 @@ pipeline {
                     def FULL_IMAGE = "${IMAGE_NAME}:${tag}"
                     withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG')]) {
                         sh """
-                            # 创建命名空间（跳过验证）
+                            # 创建命名空间
                             kubectl --insecure-skip-tls-verify create namespace ${NAMESPACE} --dry-run=client -o yaml | \\
                             kubectl --insecure-skip-tls-verify apply --validate=false -f -
 
-                            # 部署应用（跳过验证）
+                            # 部署应用
                             kubectl --insecure-skip-tls-verify create deployment ${APP_NAME} \\
                                 --image=${FULL_IMAGE} \\
                                 --port=8080 \\
@@ -61,7 +61,7 @@ pipeline {
                                 --dry-run=client -o yaml | \\
                             kubectl --insecure-skip-tls-verify apply --validate=false -f -
 
-                            # 创建 Service（LoadBalancer，跳过验证）
+                            # 创建 Service（LoadBalancer）
                             kubectl --insecure-skip-tls-verify create service loadbalancer ${APP_NAME} \\
                                 --tcp=80:8080 \\
                                 -n ${NAMESPACE} \\
@@ -69,7 +69,7 @@ pipeline {
                             sed 's/port: 80/port: 8080/; s/targetPort: 8080/targetPort: 8080/; s/name:.*/name: http/' | \\
                             kubectl --insecure-skip-tls-verify apply --validate=false -f -
 
-                            # 打标签（跳过验证）
+                            # 打标签
                             kubectl --insecure-skip-tls-verify label service ${APP_NAME} app=${APP_NAME} -n ${NAMESPACE} --overwrite
 
                             echo "✅ 应用已部署，Prometheus 可自动发现监控指标"
