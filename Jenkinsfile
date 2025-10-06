@@ -49,18 +49,28 @@ pipeline {
             def FULL_IMAGE = "${IMAGE_NAME}:${tag}"
             withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG')]) {
                 sh """
-                    kubectl --insecure-skip-tls-verify create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl --insecure-skip-tls-verify apply -f -
+                    # 创建命名空间
+                    kubectl --insecure-skip-tls-verify create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+
+                    # 部署应用（确保端口名为 http）
                     kubectl --insecure-skip-tls-verify create deployment ${APP_NAME} \\
                         --image=${FULL_IMAGE} \\
                         --port=8080 \\
                         -n ${NAMESPACE} \\
-                        --dry-run=client -o yaml | kubectl --insecure-skip-tls-verify apply -f -
-                    # 创建或更新 service
+                        --dry-run=client -o yaml | kubectl apply -f -
+
+                    # 创建 Service（关键：port name 必须为 'http'）
                     kubectl --insecure-skip-tls-verify create service loadbalancer ${APP_NAME} \\
                         --tcp=80:8080 \\
                         -n ${NAMESPACE} \\
-                        --dry-run=client -o yaml | kubectl --insecure-skip-tls-verify apply -f -
-                    echo "✅ 应用已部署到命名空间: ${NAMESPACE}"
+                        --dry-run=client -o yaml | \\
+                        sed 's/port: 80/port: 8080/; s/targetPort: 8080/targetPort: 8080/; s/\$name:\$.*/\\1 http/' | \\
+                        kubectl apply -f -
+
+                    # 确保 Service 有监控 label
+                    kubectl --insecure-skip-tls-verify label service ${APP_NAME} app=${APP_NAME} -n ${NAMESPACE} --overwrite
+
+                    echo "✅ 应用已部署，Prometheus 可自动发现监控指标"
                 """
             }
         }
