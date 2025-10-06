@@ -120,7 +120,13 @@
 
     - name: 初始化 Kubernetes 集群
       ansible.builtin.command:
-        cmd: kubeadm init --apiserver-advertise-address={{ node_ip.stdout }} --pod-network-cidr=192.168.0.0/16 --image-repository=registry.aliyuncs.com/google_containers --cri-socket=unix:///var/run/containerd/containerd.sock
+        cmd: >
+          kubeadm init
+          --apiserver-advertise-address={{ node_ip.stdout }}
+          --apiserver-cert-extra-sans={{ ansible_host }}
+          --pod-network-cidr=192.168.0.0/16
+          --image-repository=registry.aliyuncs.com/google_containers
+          --cri-socket=unix:///var/run/containerd/containerd.sock
       register: kubeadm_init_result
       retries: 3
       delay: 10
