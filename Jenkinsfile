@@ -45,9 +45,9 @@ pipeline {
                 withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG')]) {
                     sh '''
                         # 使用 envsubst 注入环境变量并部署
-                        envsubst < k8s/namespace.yaml | kubectl apply -f -
-                        envsubst < k8s/deployment.yaml | kubectl apply -f -
-                        envsubst < k8s/service.yaml | kubectl apply -f -
+                        envsubst < namespace.yaml | kubectl apply -f -
+                        envsubst < deployment.yaml | kubectl apply -f -
+                        envsubst < service.yaml | kubectl apply -f -
 
                         echo "应用已部署"
                         echo "Prometheus将通过ServiceMonitor自动发现指标。"
