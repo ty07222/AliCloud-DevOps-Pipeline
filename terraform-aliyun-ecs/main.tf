@@ -60,3 +60,11 @@ resource "alicloud_instance" "ecs_02" {
   system_disk_category       = "cloud_essd"
   system_disk_size           = 20
 }
+
+resource "local_file" "ansible_inventory" {
+  content = templatefile("${path.module}/inventory.tpl", {
+    master_public_ip   = alicloud_instance.ecs_01.public_ip
+    worker_public_ips  = [alicloud_instance.ecs_02.public_ip]
+  })
+  filename = "${path.module}/../ansible/inventory.ini"
+}
