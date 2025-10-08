@@ -52,3 +52,13 @@ output "ssh_connection_command_02" {
   description = "SSH connection command for the second ECS instance"
   value       = "ssh -i /path/to/your/private-key.pem root@${alicloud_instance.ecs_02.public_ip}"
 }
+
+output "master_public_ip" {
+  description = "Public IP of the master node (ecs_01)"
+  value       = alicloud_instance.ecs_01.public_ip
+}
+
+output "worker_public_ips" {
+  description = "List of public IPs for worker nodes"
+  value       = [alicloud_instance.ecs_02.public_ip]
+}
