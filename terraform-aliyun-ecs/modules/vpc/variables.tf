@@ -25,6 +25,6 @@ variable "vswitch_cidr" {
 variable "availability_zone" {
   description = "Availability zone to create the VSwitch and resources"
   type        = string
-  default     = "us-west-1a" # 请根据该美国区域的实际可用区修改
+  default     = "us-west-1a"
 }
 
