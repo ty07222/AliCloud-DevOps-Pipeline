@@ -6,7 +6,6 @@
     - name: 设置节点主机名
       ansible.builtin.hostname:
         name: "{{ inventory_hostname }}"
-      # 注释：将节点主机名设置为 Ansible 库存中的主机名
 
     - name: 添加 Docker CE 和 Kubernetes 仓库
       ansible.builtin.shell:
@@ -22,7 +21,6 @@
           gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
           EOF
       changed_when: true
-      # 注释：配置软件源
 
     - name: 禁用 swap 并注释 fstab 中的 swap 行
       ansible.builtin.shell:
@@ -30,7 +28,6 @@
           swapoff -a
           sed -i '/\sswap\s/s/^/#/' /etc/fstab
       changed_when: true
-      # 注释：禁用 swap 以满足 Kubernetes 要求
 
     - name: 配置内核模块和 sysctl 设置
       ansible.builtin.copy:
@@ -49,7 +46,6 @@
             net.bridge.bridge-nf-call-iptables  = 1
             net.bridge.bridge-nf-call-ip6tables = 1
             net.ipv4.ip_forward                 = 1
-      # 注释：持久化内核模块和网络设置
 
     - name: 加载内核模块并应用 sysctl 设置
       ansible.builtin.shell:
@@ -58,7 +54,6 @@
           modprobe br_netfilter
           sysctl --system
       changed_when: false
-      # 注释：确保模块加载和 sysctl 参数生效
 
     - name: 安装必要软件包并更新缓存
       ansible.builtin.dnf:
@@ -73,7 +68,6 @@
         state: present
         update_cache: yes
         use_backend: dnf4
-      # 注释：安装依赖和 Kubernetes 组件
 
     - name: 配置 containerd
       ansible.builtin.shell:
@@ -83,7 +77,6 @@
           sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
       changed_when: true
       notify: 重启 containerd
-      # 注释：生成 containerd 配置并启用 SystemdCgroup
 
     - name: 确保 containerd 运行
       ansible.builtin.systemd:
@@ -94,7 +87,6 @@
       delay: 5
       register: containerd_start
       until: containerd_start.status.ActiveState == "active"
-      # 注释：确保 containerd 服务启动并运行
 
     - name: 等待 containerd 套接字
       ansible.builtin.wait_for:
@@ -103,20 +95,17 @@
         timeout: 30
       retries: 3
       delay: 5
-      # 注释：确保 containerd 套接字可用，防止拉取镜像失败
 
     - name: 预拉取 Kubernetes 镜像
       ansible.builtin.command:
         cmd: kubeadm config images pull --image-repository=registry.aliyuncs.com/google_containers --cri-socket=unix:///var/run/containerd/containerd.sock
       changed_when: true
-      # 注释：拉取 Kubernetes 所需镜像
 
     - name: 获取节点 IP 地址
       ansible.builtin.shell:
         cmd: ip a | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1 | head -n 1
       register: node_ip
       changed_when: false
-      # 注释：动态获取节点 IP，避免硬编码
 
     - name: 初始化 Kubernetes 集群
       ansible.builtin.command:
@@ -132,20 +121,17 @@
       delay: 10
       until: kubeadm_init_result.rc == 0
       changed_when: true
-      # 注释：初始化 Kubernetes 集群
 
     - name: 提取完整的 kubeadm join 命令
       ansible.builtin.shell:
         cmd: kubeadm token create --print-join-command
       register: join_command_result
       when: kubeadm_init_result.rc == 0
-      # 注释：使用 kubeadm token create 直接生成 join 命令
 
     - name: 设置最终 join 命令
       ansible.builtin.set_fact:
         kubeadm_join_command: "{{ join_command_result.stdout | trim }}"
       when: join_command_result.rc == 0
-      # 注释：保存提取的 join 命令
 
     - name: 在控制机上创建保存目录
       ansible.builtin.file:
@@ -154,7 +140,6 @@
         mode: '0755'
       delegate_to: localhost
       run_once: true
-      # 注释：创建保存 join 命令的目录
 
     - name: 在控制机上保存 join 命令
       ansible.builtin.copy:
@@ -172,13 +157,11 @@
       delegate_to: localhost
       run_once: true
       when: kubeadm_join_command != '' and kubeadm_join_command is defined
-      # 注释：将 join 命令保存到控制机上的文件中
 
     - name: 调试显示提取的 join 命令
       ansible.builtin.debug:
         msg: "提取的 join 命令: {{ kubeadm_join_command }}"
       when: kubeadm_join_command != '' and kubeadm_join_command is defined
-      # 注释：调试用，确认命令提取正确
 
     - name: 配置主节点 /etc/hosts 以解析 worker 节点
       ansible.builtin.lineinfile:
@@ -186,7 +169,6 @@
         line: "{{ hostvars[item]['ansible_host'] }} {{ item }}"
         state: present
       loop: "{{ groups['k8s_workers'] }}"
-      # 注释：动态添加 worker 节点的 IP 和主机名到主节点的 /etc/hosts
 
     - name: 配置 kubectl
       ansible.builtin.shell:
@@ -196,7 +178,6 @@
           chown $(id -u):$(id -g) $HOME/.kube/config
       changed_when: true
       when: kubeadm_init_result.rc == 0
-      # 注释：设置 kubeconfig 以便使用 kubectl
 
     - name: 从主节点拉取 kubeconfig 到控制机
       ansible.builtin.fetch:
@@ -204,7 +185,6 @@
         dest: "./kubeadm-join-commands/{{ inventory_hostname }}-kubeconfig"
         flat: yes
       when: kubeadm_init_result.rc == 0
-      # 注释：将主节点的 kubeconfig 保存到控制机的 kubeadm-join-commands 目录
 
     - name: 安装 Calico CNI 插件
       ansible.builtin.command:
@@ -213,7 +193,6 @@
         KUBECONFIG: "{{ ansible_env.HOME }}/.kube/config"
       changed_when: true
       when: kubeadm_init_result.rc == 0
-      # 注释：部署 Calico 网络插件
 
     - name: 检查集群节点状态
       ansible.builtin.shell:
@@ -224,13 +203,11 @@
       register: node_status
       changed_when: false
       when: kubeadm_init_result.rc == 0
-      # 注释：验证集群节点状态
 
     - name: 显示集群状态
       ansible.builtin.debug:
         msg: "集群状态：\n{{ node_status.stdout_lines | default(['无输出']) }}"
       when: node_status.stdout is defined
-      # 注释：输出集群状态
 
   handlers:
     - name: 重启 containerd
@@ -238,4 +215,3 @@
         name: containerd
         state: restarted
         enabled: yes
-      # 注释：containerd 配置更改后重启服务
