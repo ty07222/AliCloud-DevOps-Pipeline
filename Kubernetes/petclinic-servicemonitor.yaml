@@ -4,15 +4,15 @@ metadata:
   name: spring-petclinic
   namespace: monitoring
   labels:
-    release: prometheus  # 必须匹配 Prometheus 的 serviceMonitorSelector
+    release: prometheus
 spec:
   selector:
     matchLabels:
-      app: spring-petclinic  # 必须和你的 Service 的 label 一致
+      app: spring-petclinic
   namespaceSelector:
     matchNames:
     - petclinic
   endpoints:
-  - port: http  # 必须和 Service 的 port name 一致
+  - port: http
     path: /actuator/prometheus
     interval: 15s
